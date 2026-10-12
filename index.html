@@ -91,7 +91,7 @@
     { name: 'Ventas', items: [
       { t: 'KPIs de ventas', s: 'Reporte del manager', i: '📊', c: '#10b981', domain: 'https://kpis.auto-republic.com/', old: 'https://helpful-blessing-production-6391.up.railway.app/' },
       { t: 'Producción', s: 'Equipo de ventas · citas · efectividad', i: '🏁', c: '#3b82f6', domain: 'https://produccion.auto-republic.com/', old: 'https://saul-sketch.github.io/ar-sales-production/' },
-      { t: 'Marcador (WaveDialer)', s: 'Llamadas y agentes · entra con su propia clave', i: '📞', c: '#06b6d4', noSso: true, domain: 'https://wavedialer.fly.dev/dashboard-v2.html?locationId=ez4QcQYqIRKvgT8fIQ22', old: 'https://wavedialer.fly.dev/dashboard-v2.html?locationId=ez4QcQYqIRKvgT8fIQ22' },
+      { t: 'Marcador (WaveDialer)', s: 'Llamadas y agentes · Auto Republic', i: '📞', c: '#06b6d4', noSso: true, privateSlug: 'wavedialer-ar', domain: 'https://wavedialer.fly.dev/dashboard-v2.html?locationId=ez4QcQYqIRKvgT8fIQ22', old: 'https://wavedialer.fly.dev/dashboard-v2.html?locationId=ez4QcQYqIRKvgT8fIQ22' },
       { t: 'Reporte diario', s: 'Formulario de visitas', i: '📝', c: '#f59e0b', domain: 'https://reporte.auto-republic.com/', old: 'https://fortunate-presence-production-1aee.up.railway.app/' },
     ]},
     { name: 'Marketing', items: [
@@ -113,13 +113,22 @@
   });
   const $ = (id) => document.getElementById(id);
   let filter = 'Todo';
+  // Private entry links (e.g. the dialer's permanent key) live in a table only Saúl's
+  // Google session can read (RLS) — never in this public file.
+  let PRIVATE = {};
+  async function loadPrivate() {
+    try {
+      const { data } = await sb.from('management_private_links').select('slug,url');
+      PRIVATE = Object.fromEntries((data || []).map(r => [r.slug, r.url]));
+    } catch { PRIVATE = {}; }
+  }
 
   function render() {
     const tabs = ['Todo', ...MENU.map(m => m.name)];
     $('nav').innerHTML = tabs.map(t => `<button class="${t === filter ? 'on' : ''}" data-t="${t}">${t}</button>`).join('');
     $('sections').innerHTML = MENU.filter(m => filter === 'Todo' || m.name === filter).map(m => `
       <section><h2>${m.name}</h2><div class="grid">${m.items.map(it => `
-        <a class="tile" href="${USE_DOMAIN ? it.domain : it.old}"${it.noSso ? ' data-nosso="1"' : ''} target="_blank" rel="noopener">
+        <a class="tile" href="${(it.privateSlug && PRIVATE[it.privateSlug]) || (USE_DOMAIN ? it.domain : it.old)}"${it.noSso ? ' data-nosso="1"' : ''} target="_blank" rel="noopener">
           <div class="ico" style="background:${it.c}22">${it.i}</div>
           <div><b>${it.t}</b><span class="${it.warn ? 'warn' : ''}">${it.s}</span></div>
           <div class="go">↗</div>
@@ -147,6 +156,7 @@
       $('who').textContent = email;
       $('login').hidden = true; $('app').hidden = false;
       render();
+      loadPrivate().then(render);
       return;
     }
     if (session) { sb.auth.signOut(); $('err').textContent = 'Este correo no tiene acceso'; }
