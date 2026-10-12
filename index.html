@@ -91,6 +91,7 @@
     { name: 'Ventas', items: [
       { t: 'KPIs de ventas', s: 'Reporte del manager', i: '📊', c: '#10b981', domain: 'https://kpis.auto-republic.com/', old: 'https://helpful-blessing-production-6391.up.railway.app/' },
       { t: 'Producción', s: 'Equipo de ventas · citas · efectividad', i: '🏁', c: '#3b82f6', domain: 'https://produccion.auto-republic.com/', old: 'https://saul-sketch.github.io/ar-sales-production/' },
+      { t: 'Marcador (WaveDialer)', s: 'Llamadas y agentes · entra con su propia clave', i: '📞', c: '#06b6d4', noSso: true, domain: 'https://wavedialer.fly.dev/dashboard-v2.html?locationId=ez4QcQYqIRKvgT8fIQ22', old: 'https://wavedialer.fly.dev/dashboard-v2.html?locationId=ez4QcQYqIRKvgT8fIQ22' },
       { t: 'Reporte diario', s: 'Formulario de visitas', i: '📝', c: '#f59e0b', domain: 'https://reporte.auto-republic.com/', old: 'https://fortunate-presence-production-1aee.up.railway.app/' },
     ]},
     { name: 'Marketing', items: [
@@ -118,7 +119,7 @@
     $('nav').innerHTML = tabs.map(t => `<button class="${t === filter ? 'on' : ''}" data-t="${t}">${t}</button>`).join('');
     $('sections').innerHTML = MENU.filter(m => filter === 'Todo' || m.name === filter).map(m => `
       <section><h2>${m.name}</h2><div class="grid">${m.items.map(it => `
-        <a class="tile" href="${USE_DOMAIN ? it.domain : it.old}" target="_blank" rel="noopener">
+        <a class="tile" href="${USE_DOMAIN ? it.domain : it.old}"${it.noSso ? ' data-nosso="1"' : ''} target="_blank" rel="noopener">
           <div class="ico" style="background:${it.c}22">${it.i}</div>
           <div><b>${it.t}</b><span class="${it.warn ? 'warn' : ''}">${it.s}</span></div>
           <div class="go">↗</div>
@@ -130,7 +131,7 @@
   // Attach a fresh access token at click time so the dashboard opens already signed in.
   $('sections').addEventListener('click', async (e) => {
     const a = e.target.closest('a.tile');
-    if (!a) return;
+    if (!a || a.dataset.nosso) return;
     e.preventDefault();
     const win = window.open('about:blank', '_blank');
     const { data } = await sb.auth.getSession();
